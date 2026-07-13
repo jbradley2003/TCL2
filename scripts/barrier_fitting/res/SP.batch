@@ -1,0 +1,29 @@
+#!/bin/bash
+#SBATCH --job-name=
+#SBATCH --output=
+#SBATCH --ntasks=
+#SBATCH --mem=
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=bradl571@umn.edu
+
+cd $SLURM_SUBMIT_DIR
+
+export PROJECT=Methyl
+export SCRA=$SCRATCH/$PROJECT$SLURM_JOB_ID
+
+mkdir $SCRA
+
+echo $SCRA
+echo $SCRATCH
+
+cp file.inp $SCRA
+pwd
+ls $SCRA
+cd $SCRA
+
+module load orca/6.1.1
+/common/software/install/manual/orca/6.1.1/orca file.inp > file.out
+
+cp $SCRA/*.gbw $SLURM_SUBMIT_DIR
+rm -r $SCRA
