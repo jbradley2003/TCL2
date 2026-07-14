@@ -12,32 +12,29 @@ H = []
 B = []
 W = []
 T = []
-for i in m:
-    start = time.perf_counter()
-    createH(i,500)
-    end = time.perf_counter()
-    dt = end - start
-    T.append(dt*1e3)
+
 
 
     
-# for v in V:
-#     start = time.perf_counter()
-#     w, m = groundSplitting(v)
-#     end = time.perf_counter()
-#     dt = end - start
-#     T.append(dt*1e3)
-#     B.append(m*2+1)
-#     W.append(w)
+for v in V:
+    # start = time.perf_counter()
+    e = eigvals(500,v)
+    t = [e for e in eigvals if e < v]
+    n = len(t)
+    # end = time.perf_counter()
+    # dt = end - start
+    # T.append(dt*1e3)
+    # B.append(m*2+1)
+    W.append(n)
 
-plt.plot(T, m)
+plt.plot(W, V)
 # plt.plot(V,[80]*1000,linestyle='--',color='red')
-plt.xlabel('Basis Function Index (m)')
-plt.ylabel('Runtime (ms)')
-plt.title(r'Sparse Hamiltonian Formation ($V_3 = 500$ meV)')
+plt.xlabel('Potential Barrier')
+plt.ylabel('Number of Tunneling States')
+plt.title(r'Tunneling Ensemble Size ($m= 500$)')
 plt.grid()
 # plt.savefig('conv',dpi=30)
-plt.show()
+# plt.show()
 # plt.clf()
 
 # plt.plot(V,100*(groundSplittingApprox(V)/(2*np.pi)-W)/W)

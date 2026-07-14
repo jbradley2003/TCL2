@@ -19,8 +19,11 @@ def createH(m, V_k, k=3, B=B_J*6.242e+21):
   H = T + V
   return H, states
 
+def eigvals(m, V):
+  return np.linalg.eigvalsh(createH(m, V)[0])
+
 def splitting(m, V):
-  evals = np.linalg.eigvalsh(createH(m, V)[0])
+  evals = eigvals(m, V)
   grouped = [evals[i:i+3] for i in range(0, len(evals), 3)]
   split = [abs(g[0] - g[2]) for g in grouped if len(g) == 3]
   return split, grouped
@@ -94,7 +97,7 @@ def plotPotentials(root, steps):
       plt.clf()
 
 def methylMap(xyz_path, me_path):
-  conversion_factor = 2
+  meV_to_kHz = 241798
   mol, atoms, xyz = xyzToMol(xyz_path)
   methyls, methyl_bonds = findMethyls(mol)
   barriers, data, bmap = getBarriers(me_path)
@@ -103,6 +106,6 @@ def methylMap(xyz_path, me_path):
     pairs = values[1]
     for pair in pairs:
       v = bmap[central_carbon]
-      vmap[pair] = -2*conversion_factor*v/3
+      vmap[pair] = -2*meV_to_kHz*v/3
    
 
