@@ -61,6 +61,7 @@ atomic_valence[16] = [6,3,2] #[6,4,2]
 atomic_valence[17] = [1]
 atomic_valence[21] = [3,6]
 atomic_valence[28] = [6]
+atomic_valence[30] = [6]
 atomic_valence[32] = [4]
 atomic_valence[34] = [2]
 atomic_valence[35] = [1]
@@ -83,6 +84,7 @@ atomic_valence_electrons[16] = 6
 atomic_valence_electrons[17] = 7
 atomic_valence_electrons[21] = 1
 atomic_valence_electrons[28] = 2
+atomic_valence_electrons[30] = 10
 atomic_valence_electrons[32] = 4
 atomic_valence_electrons[34] = 6
 atomic_valence_electrons[35] = 10
@@ -560,9 +562,10 @@ def read_xyz_file(filename, look_for_charge=True):
                 if "charge=" in line:
                     charge = int(line.split("=")[1])
             else:
-                atomic_symbol, x, y, z = line.split()
-                atomic_symbols.append(atomic_symbol)
-                xyz_coordinates.append([float(x), float(y), float(z)])
+                if len(line) > 1:
+                    atomic_symbol, x, y, z = line.split()
+                    atomic_symbols.append(atomic_symbol)
+                    xyz_coordinates.append([float(x), float(y), float(z)])
 
     atoms = [int_atom(atom) for atom in atomic_symbols]
 

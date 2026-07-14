@@ -63,16 +63,17 @@ def xyzToMol(filepath):
     mol = xyz2mol(atoms,xyz,charge,True,True,True,False,False)
     return mol, atoms, xyz
 
-def viewMol3D(mol,w=500,h=500):
+def viewMol3D(mol,name='',w=500,h=500):
     mb = Chem.MolToMolBlock(mol)
     view = py3Dmol.view(width=w, height=h)
     view.addModel(mb, "sdf")
+    
     view.setStyle({
         'stick': {'radius': 0.15},  # The "sticks"
         'sphere': {'scale': 0.3}    # The "balls" (scaled down from standard VdW)
     })
     view.zoomTo()
-    out_html = os.path.join(os.getcwd(), "molecule_view.html")
+    out_html = os.path.join(os.getcwd(), f"html/{name}_molecule_view.html")
     view.write_html(out_html)
     print(f"Saved 3D view to {out_html}")
 
@@ -116,7 +117,7 @@ def findMethyls(mol):
     return methyls, methyl_bonds
 
 # Useful for pulling individual structures from a large XYZ file.
-def createXYZs(filepath,n,base_name):
+def createXYZs(filepath,base_name,n=0):
     file_count = 0
     with open(filepath, 'r') as file:
         for line in file:
@@ -126,7 +127,8 @@ def createXYZs(filepath,n,base_name):
                 atom_count = int(tmp[0])
                 file_count += 1
                 file_name = f'{base_name}{file_count}.xyz'
-                if file_count > n:
+
+                if n > 0 and file_count > n:
                     break
                 with open(file_name, 'w') as target:
                     target.write("\n" * (atom_count+3))
@@ -137,7 +139,4 @@ def createXYZs(filepath,n,base_name):
             if index == atom_count + 2:
                 with open(file_name, 'w') as target:
                     target.writelines(lines)
-
-# if __name__ == "__main__":
-
 
