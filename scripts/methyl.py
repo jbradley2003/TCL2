@@ -102,7 +102,10 @@ def methylMap(xyz_path, me_path):
   for central_carbon, values in methyls.items():
     pairs = values[1]
     for pair in pairs:
-      v = bmap[central_carbon][0]
-      v_t = nthSplitting(1,v)[0]
+      if central_carbon in bmap.keys():
+        v = bmap[central_carbon][0]
+        v_t = nthSplitting(1,v)[0]
+      else:
+        print(f'ATOM {central_carbon} is not present in bmap!')
       vmap[pair] = -2*meV_to_kHz*v_t/3
   return vmap
