@@ -428,6 +428,128 @@ def I1o2I1o2coherenceTCL2(imap,timeSpace,Bext,highestN,methyl=False,bath=False,m
 
     return 1/2*np.exp(-argument),modulationDepthFrequencyMap
 
+def I1o2I1o2coherenceAPPA(imap,timeSpace,Bext,highestN,methyl=False,bath=False,mmap={},distMap={}):
+    
+    As = {}
+    Bs = {}
+    Js = {}
+    
+    modulationDepthFrequencyMap = {}
+    
+    modulationDepthFrequencyMap['m-m pairs'] = {}
+    
+    modulationDepthFrequencyMap['m-s pairs'] = {}
+    modulationDepthFrequencyMap['m-s pairs']['Modulation Depth'] = {}
+    modulationDepthFrequencyMap['m-s pairs']['Frequency'] = {}
+    modulationDepthFrequencyMap['m-s pairs']['Distances'] = {}
+    
+    modulationDepthFrequencyMap['s-s pairs'] = {}
+    
+    ssMods = []
+    ssFreqs = []
+    ssDists = []
+    sseDists = []
+    for elem in list(imap.keys()): 
+        
+        i = elem[0]
+        j = elem[1]
+    
+        if i == 'e':
+            As[j] = imap[(i,j)][2][2]
+        elif i != 'e':
+            Bs[(i,j)] = imap[(i,j)][2][2]
+            key = (int(i[:-1]),int(j[:-1]))
+
+            if key in list(mmap.keys()) and methyl:
+                Js[(i,j)] = mmap[key]
+            else:
+                Js[(i,j)] = 0
+
+            
+            numI = int(re.match(r"(\d+)([a-zA-Z]+)", i)[1])
+            numJ = int(re.match(r"(\d+)([a-zA-Z]+)", j)[1])
+            
+            typeI = re.findall(r'[a-zA-Z]+', i)[0]
+            typeJ = re.findall(r'[a-zA-Z]+', j)[0]
+            
+            if numI <= highestN and numJ > highestN and typeI != 'F':
+        
+                modulationDepthFrequencyMap['m-s pairs']['Modulation Depth'][i] = []
+                modulationDepthFrequencyMap['m-s pairs']['Frequency'][i] = []
+                modulationDepthFrequencyMap['m-s pairs']['Distances'][i] = []
+    
+    argument = np.ones(len(timeSpace))
+    
+    for bint in list(Bs.keys()): 
+        k = bint[0]
+        l = bint[1]
+            
+        typeK = re.findall(r'[a-zA-Z]+', k)[0]
+        typeL = re.findall(r'[a-zA-Z]+', l)[0]
+        
+        numK = int(re.match(r"(\d+)([a-zA-Z]+)", k)[1])
+        numL = int(re.match(r"(\d+)([a-zA-Z]+)", l)[1])
+
+        if bath:
+            if typeK == typeL:
+            
+                if numL <= highestN: # this condition is sufficent to limit to m-m pairs
+                
+                    argument *= (1/2)-2*I1o2I1o2WtTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k,l)],timeSpace)
+
+                    modulationDepthFrequencyMap['m-m pairs'][(k,l)] = (modulationDepthTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k,l)]),frequencyTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k,l)]))
+                    
+                elif numK > highestN: # this condition is sufficient to limit to s-s pairs
+                    
+                    if distMap[(k,l)] < 3.0 and distMap[(k,l)] > 1.0:
+
+                        argument *= (1/2)-2*I1o2I1o2WtTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k,l)],timeSpace)
+
+                        ssMods.append(modulationDepthTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k,l)]))
+                        ssFreqs.append(frequencyTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k,l)]))
+                        ssDists.append(distMap[(k,l)])
+                        sseDists.append(1/2 * (distMap[('e',k)] + distMap[('e',l)]))
+                    
+                elif numK <= highestN and numL > highestN: # this condition is sufficient to limit to m-s pairs
+                    
+                    argument *= (1/2)-2*I1o2I1o2WtTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k, l)],timeSpace)
+
+                    modulationDepthFrequencyMap['m-s pairs']['Modulation Depth'][k].append(modulationDepthTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k,l)]))
+                    modulationDepthFrequencyMap['m-s pairs']['Frequency'][k].append(frequencyTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k,l)]))
+                    modulationDepthFrequencyMap['m-s pairs']['Distances'][k].append(distMap[(k,l)])
+        else:
+            if typeK == typeL:
+            
+                if numL <= highestN: # this condition is sufficent to limit to m-m pairs
+                
+                    argument *= (1/2)-2*I1o2I1o2WtTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k,l)],timeSpace)
+
+                    modulationDepthFrequencyMap['m-m pairs'][(k,l)] = (modulationDepthTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k,l)]),frequencyTCL2LambdaJ(As[k],As[l],Bs[(k,l)],Js[(k,l)]))
+            
+    # code to sort the three s-s arrays in the same order here
+
+    ssIndices = np.argsort(sseDists)
+
+    ssDistsSorted = np.array(ssDists)[ssIndices]
+    sseDistsSorted = np.array(sseDists)[ssIndices]
+    ssModsSorted = np.array(ssMods)[ssIndices]
+    ssFreqsSorted = np.array(ssFreqs)[ssIndices]
+    
+    modulationDepthFrequencyMap['s-s pairs']['Modulation Depth'] = ssModsSorted
+    modulationDepthFrequencyMap['s-s pairs']['Frequency'] = ssFreqsSorted
+    modulationDepthFrequencyMap['s-s pairs']['Distances'] = ssDistsSorted
+    modulationDepthFrequencyMap['s-s pairs']['E Distances'] = sseDistsSorted
+    
+    # code to sort the three m-s pair arrays in the same order
+                                                                            
+    for key in list(modulationDepthFrequencyMap['m-s pairs']['Distances'].keys()):
+        msIndicesKey = np.argsort(modulationDepthFrequencyMap['m-s pairs']['Distances'][key])
+        modulationDepthFrequencyMap['m-s pairs']['Distances'][key] = np.array(modulationDepthFrequencyMap['m-s pairs']['Distances'][key])[msIndicesKey]
+        modulationDepthFrequencyMap['m-s pairs']['Modulation Depth'][key] = np.array(modulationDepthFrequencyMap['m-s pairs']['Modulation Depth'][key])[msIndicesKey]
+        modulationDepthFrequencyMap['m-s pairs']['Frequency'][key] = np.array(modulationDepthFrequencyMap['m-s pairs']['Frequency'][key])[msIndicesKey]
+
+    return argument,modulationDepthFrequencyMap
+
 #
 #
 ### Dynamics Functions
@@ -436,7 +558,7 @@ def I1o2I1o2coherenceTCL2(imap,timeSpace,Bext,highestN,methyl=False,bath=False,m
 
 def getCoh(filepath,soi,times,methyl=False,root='',xyzpath=''):
     
-    cPos = np.array([0,0,0]) # I need to write a function to set this equal to the position of greatest spin density
+    cPos = getCenterSpinDens(filepath) # cPos was originally the set to the origin.
     Bext = np.array([0,0,10000])
     
     xyz,hf = readOrcaV2(filepath,soi)
