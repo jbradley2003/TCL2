@@ -336,9 +336,10 @@ def I1o2I1o2coherenceTCL2(imap,timeSpace,Bext,highestN,methyl=False,bath=False,m
             As[j] = imap[(i,j)][2][2]
         elif i != 'e':
             Bs[(i,j)] = imap[(i,j)][2][2]
+            key = (int(i[:-1]),int(j[:-1]))
 
-            if elem in list(mmap.keys()) and methyl:
-                Js[(i,j)] = mmap[(i,j)]
+            if key in list(mmap.keys()) and methyl:
+                Js[(i,j)] = mmap[key]
             else:
                 Js[(i,j)] = 0
 
@@ -467,9 +468,9 @@ def getCohBath(filepath,soi,times,boxLength,bathType,concentration,methyl=False,
 
     if methyl:
         mmap = methylMap(xyzpath,root)
-        return I1o2I1o2coherenceTCL2(imapB,times*2*np.pi,Bext,highestN,True,True,mmap,distMap)
+        return I1o2I1o2coherenceTCL2(imapB,times*2*np.pi,Bext,highestN,methyl,True,mmap,distMap)
 
-    return I1o2I1o2coherenceTCL2(imapB,times*2*np.pi,Bext,highestN,True,distMap)
+    return I1o2I1o2coherenceTCL2(imapB,times*2*np.pi,Bext,highestN,methyl,True,{},distMap)
 
 #
 #

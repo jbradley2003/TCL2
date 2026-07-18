@@ -28,19 +28,18 @@ def splitting(m, V):
   split = [abs(g[0] - g[2]) for g in grouped if len(g) == 3]
   return split, grouped
 
-# Modify to plot for multiple splittings (behavior will just be shifted up, maybe more noisy)
-def groundSplitting(V, m_init=4, tol=1e-12):
-  hbar_meV = 6.582e-13
+def nthSplitting(n, V, tol=1e-12):
+  m_init = int(np.ceil((3*n-1)/2))
   m = m_init+1
-  s_init = splitting(m_init, V)[0][0]
-  s_curr = splitting(m, V)[0][0]
-  diff = abs(s_curr - s_init)
-  while diff > tol:
+  v_init = splitting(m_init, V)[0][n-1]
+  v_curr = splitting(m, V)[0][n-1]
+  dv = abs(v_curr - v_init)
+  while dv > tol:
        m += 1
-       s_next = splitting(m, V)[0][0]
-       diff = abs(s_next - s_curr)
-       s_curr = s_next
-  return s_curr/hbar_meV, m
+       v_next = splitting(m, V)[0][n-1]
+       dv = abs(v_next - v_curr)
+       v_curr = v_next
+  return v_curr, m
 
 def groundSplittingApprox(V, I=INERTIA, hbar=HBAR):
   eV_to_J = 1.602176634e-19
@@ -56,56 +55,54 @@ def getBarrier(filename):
   return fitPotential(csv),[x,y]
 
 def getBarriers(root):
-  barriers = []
-  data = []
   bmap = {}
-  # This depends on the following directory name convention: 'Me{central_carbon}'
+  # This depends on the following directory name convention: 'Me{central_carbon}' --> make this dynamic
   for d in os.scandir(root):
       if os.path.isdir(d.path) and 'Me' in d.name:
         key = int(d.name[2:])
         csv = [f for f in os.listdir(d.path) if f.endswith('.csv')][0]
         filename = f'{root}/{d.name}/{csv}'
+        print(filename)
         barrier, points = getBarrier(filename)
-        bmap[key] = barrier
-        data.append(points)
-        barriers.append(barrier)
-  return barriers, data, bmap
+        bmap[key] = (barrier, points)
+  return bmap
 
 def fitPotential(data):
   kcal_to_meV = 43.364
   x = np.deg2rad(data[:,1])
   y = data[:,4]*kcal_to_meV
-  guess_barrier = (np.max(y) - np.min(y)) / 2
-  popt, pcov = curve_fit(potential, x, y, p0=guess_barrier)
+  # guess_barrier = (np.max(y) - np.min(y)) / 2
+  popt, pcov = curve_fit(potential, x, y)
   return popt[0]
 
 def potential(phi, barrier):
   return barrier*(1 - np.cos(3*phi))/2
 
-def plotPotentials(root, steps):
-  barriers, coords, mmap = getBarriers(root)
+def plotPotentials(root, steps=500):
+  bmap = getBarriers(root)
   phi_range = np.linspace(0,2*np.pi,steps)
-  for i in range(len(coords)):
-      plt.scatter(coords[i][0], coords[i][1], color='red')
-      plt.plot(phi_range, potential(phi_range, barriers[i]), color='black', 
-                label= r'$V_3$ = ' + str(round(barriers[i],2)))
+  for k, v in bmap.items():
+      barrier, data = v
+      plt.scatter(data[0], data[1], color='red')
+      plt.plot(phi_range, potential(phi_range, barrier), color='black', 
+                label= r'$V_3$ = ' + str(round(barrier,2)))
       plt.xlabel(r'$\phi$ (rad)')
       plt.ylabel(r'$V(\phi)$ (meV)')
-      plt.title(f'Threefold Potential for Me{i+1}')
+      plt.title(f'Rotational Potential for Me{k}')
       plt.legend()
       plt.show()
       plt.clf()
 
 def methylMap(xyz_path, me_path):
-  meV_to_kHz = 241798
+  meV_to_kHz = 241798930
   mol, atoms, xyz = xyzToMol(xyz_path)
   methyls, methyl_bonds = findMethyls(mol)
-  barriers, data, bmap = getBarriers(me_path)
+  bmap = getBarriers(me_path)
   vmap = {}
   for central_carbon, values in methyls.items():
     pairs = values[1]
     for pair in pairs:
-      v = bmap[central_carbon]
-      vmap[pair] = -2*meV_to_kHz*v/3
-   
-
+      v = bmap[central_carbon][0]
+      v_t = nthSplitting(1,v)[0]
+      vmap[pair] = -2*meV_to_kHz*v_t/3
+  return vmap
